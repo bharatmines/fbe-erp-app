@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Future Bio Energy ERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="mobile-header">
+    <div class="logo">⚡ FBE LIVE</div>
+    <i class="fas fa-bars menu-btn" onclick="toggleMenu()"></i>
+  </div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">⚡ FBE LIVE</div>
+    <ul class="menu-links">
+      <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+      <li><a href="#" onclick="openModal()"><i class="fas fa-industry"></i> Add Production</a></li>
+      <li><a href="#"><i class="fas fa-shopping-cart"></i> Sales</a></li>
+      <li><a href="#"><i class="fas fa-truck"></i> Purchases</a></li>
+      <li><a href="#"><i class="fas fa-users"></i> Labour</a></li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+    <header class="top-bar">
+      <div>
+        <h1>Operations Dashboard</h1>
+        <p>Live summary of FBE metrics</p>
+      </div>
+      <div class="controls">
+        <select id="dateFilter" onchange="toggleCustomDate()">
+          <option value="all">All Time</option>
+          <option value="recent">Last 30 Entries</option>
+          <option value="custom">Custom Range</option>
+        </select>
+        <div id="customDateRange" style="display:none; gap:10px; align-items:center;">
+           <input type="date" id="startDate" onchange="loadDashboard()">
+           <span>TO</span>
+           <input type="date" id="endDate" onchange="loadDashboard()">
+        </div>
+      </div>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" id="kpi-sales"><h3>Total Sales</h3><h2>⏳...</h2></div>
+      <div class="kpi-card" id="kpi-production"><h3>Production (MT)</h3><h2>⏳...</h2></div>
+      <div class="kpi-card" id="kpi-energy"><h3>Energy Units/MT</h3><h2>⏳...</h2></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-container"><h3>Sales Trend</h3><canvas id="salesChart"></canvas></div>
+      <div class="chart-container"><h3>Biomass Mix</h3><canvas id="biomassChart"></canvas></div>
+    </div>
+
+    <div class="table-container">
+      <h3>Outstanding Payments (Pending)</h3>
+      <table id="outstandingTable">
+        <thead><tr><th>Customer</th><th>Amount Due (₹)</th></tr></thead>
+        <tbody><tr><td>Loading data...</td><td></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div id="prodModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2>Log New Production</h2>
+      <label>Date</label><input type="date" id="formDate">
+      <label>Shift</label><select id="formShift"><option>Day</option><option>Night</option></select>
+      <label>Production (MT)</label><input type="number" id="formMT" placeholder="15.5">
+      <label>Machine Hours</label><input type="number" id="formHrs" placeholder="8">
+      <button class="btn-primary" onclick="submitProduction()">Save to Google Sheet</button>
+      <p id="formMessage" style="text-align:center; color:green; margin-top:10px;"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
