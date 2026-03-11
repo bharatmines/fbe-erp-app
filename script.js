@@ -19,7 +19,7 @@ function checkLogin() {
 
 function unlockApp() {
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appContent').style.display = 'flex'; // Fixes the layout wrapper!
+  document.getElementById('appContent').style.display = 'flex'; 
   fetchAllData(); 
 }
 
@@ -28,16 +28,34 @@ function logout() {
   location.reload(); 
 }
 
-// --- API LINKS ---
+// --- API LINKS (Added Purchases!) ---
 const apis = {
   sales: 'https://api.sheety.co/44d3fe45eb6aab6505e4de925e5ad989/fbeDatabase/sales',
   production: 'https://api.sheety.co/44d3fe45eb6aab6505e4de925e5ad989/fbeDatabase/production',
   electricity: 'https://api.sheety.co/44d3fe45eb6aab6505e4de925e5ad989/fbeDatabase/electricityUnits',
-  consumption: 'https://api.sheety.co/44d3fe45eb6aab6505e4de925e5ad989/fbeDatabase/consumption'
+  consumption: 'https://api.sheety.co/44d3fe45eb6aab6505e4de925e5ad989/fbeDatabase/consumption',
+  purchases: 'https://api.sheety.co/44d3fe45eb6aab6505e4de925e5ad989/fbeDatabase/purchase'
 };
 
 let globalData = {};
 let mySalesChart, myBioChart;
+
+// --- PAGE NAVIGATION (SPA Logic) ---
+function switchView(viewName) {
+  // Hide all pages
+  document.querySelectorAll('.page-view').forEach(page => page.style.display = 'none');
+  // Remove blue highlight from all menu items
+  document.querySelectorAll('.menu-links li').forEach(li => li.classList.remove('active'));
+  
+  // Show target page and highlight menu item
+  document.getElementById('view-' + viewName).style.display = 'block';
+  document.getElementById('nav-' + viewName).classList.add('active');
+
+  // Close the mobile menu if clicked on a phone
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('active');
+  }
+}
 
 // --- UI & MODAL FUNCTIONS ---
 function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
@@ -71,29 +89,32 @@ function toggleCustomDate() {
 // --- FETCH DATA ---
 async function fetchAllData() {
   try {
-    const [s, p, e, c] = await Promise.all([
+    const [s, p, e, c, pur] = await Promise.all([
       fetch(apis.sales).then(r => r.json()), 
       fetch(apis.production).then(r => r.json()),
       fetch(apis.electricity).then(r => r.json()), 
-      fetch(apis.consumption).then(r => r.json())
+      fetch(apis.consumption).then(r => r.json()),
+      fetch(apis.purchases).then(r => r.json()) // Fetching Purchases!
     ]);
     globalData = { 
       sales: s.sales.filter(isRealData), 
       prod: p.production.filter(isRealData), 
       elec: e.electricityUnits.filter(isRealData), 
-      cons: c.consumption.filter(isRealData) 
+      cons: c.consumption.filter(isRealData),
+      purchases: pur.purchase.filter(isRealData)
     };
     loadDashboard(); 
   } catch (err) { alert("Error loading data from Sheety!"); }
 }
 
-// --- BUILD DASHBOARD ---
+// --- BUILD DASHBOARD & PAGES ---
 function loadDashboard() {
   if (!globalData.sales) return;
+  
+  // 1. FILTERING (Applies to Dashboard KPIs)
   let filterType = document.getElementById('dateFilter').value;
   let sData = globalData.sales, pData = globalData.prod, eData = globalData.elec, cData = globalData.cons;
 
-  // Filter Logic
   if (filterType === 'recent') {
     sData = sData.slice(-30); pData = pData.slice(-30); eData = eData.slice(-30); cData = cData.slice(-30);
   } else if (filterType === 'custom') {
@@ -107,7 +128,7 @@ function loadDashboard() {
     }
   }
 
-  // KPIs
+  // 2. BUILD DASHBOARD KPIS & CHARTS
   let tSales = 0, tProd = 0, tElec = 0;
   sData.forEach(r => tSales += getNum(r, 'amount'));
   pData.forEach(r => tProd += getNum(r, 'production'));
@@ -118,19 +139,14 @@ function loadDashboard() {
   document.getElementById('kpi-production').innerHTML = `<h3>Total Production</h3><h2>${tProd.toLocaleString('en-IN', {maximumFractionDigits:1})} MT</h2>`;
   document.getElementById('kpi-energy').innerHTML = `<h3>Energy Units/MT</h3><h2 style="color:${energyPerMt > 25 ? '#ef4444' : '#16a34a'}">${energyPerMt}</h2>`;
 
-  // Sales Line Chart
   if(mySalesChart) mySalesChart.destroy();
   let recentSales = sData.slice(-15); 
   mySalesChart = new Chart(document.getElementById('salesChart'), {
     type: 'line', 
-    data: { 
-      labels: recentSales.map(r => r.date), 
-      datasets: [{ label: 'Sales (₹)', data: recentSales.map(r => getNum(r, 'amount')), borderColor: '#0b4f6c', tension: 0.3 }] 
-    },
+    data: { labels: recentSales.map(r => r.date), datasets: [{ label: 'Sales (₹)', data: recentSales.map(r => getNum(r, 'amount')), borderColor: '#0b4f6c', tension: 0.3 }] },
     options: { responsive: true, maintainAspectRatio: false }
   });
 
-  // Biomass Doughnut Chart
   let bioMix = {};
   cData.forEach(r => {
     let item = r.itemName || 'Unknown';
@@ -139,29 +155,67 @@ function loadDashboard() {
   if(myBioChart) myBioChart.destroy();
   myBioChart = new Chart(document.getElementById('biomassChart'), {
     type: 'doughnut', 
-    data: { 
-      labels: Object.keys(bioMix), 
-      datasets: [{ data: Object.values(bioMix), backgroundColor: ['#16a34a', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'] }] 
-    },
+    data: { labels: Object.keys(bioMix), datasets: [{ data: Object.values(bioMix), backgroundColor: ['#16a34a', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'] }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
   });
 
-  // Outstanding Table
+  // 3. BUILD OUTSTANDING TABLE (Dashboard)
   let outstanding = {};
-  globalData.sales.forEach(r => { // Calculate outstanding based on ALL data regardless of filter
+  globalData.sales.forEach(r => { 
     if (String(r.paymentStatus || '').toLowerCase() === 'pending') {
       let cust = r.customerName || 'Unknown';
       outstanding[cust] = (outstanding[cust] || 0) + getNum(r, 'amount');
     }
   });
-  let tableHtml = '';
+  let outHtml = '';
   for(let cust in outstanding) { 
-    if(outstanding[cust] > 0) tableHtml += `<tr><td>${cust}</td><td>₹ ${outstanding[cust].toLocaleString('en-IN')}</td></tr>`; 
+    if(outstanding[cust] > 0) outHtml += `<tr><td>${cust}</td><td><strong style="color:#ef4444;">₹ ${outstanding[cust].toLocaleString('en-IN')}</strong></td></tr>`; 
   }
-  document.getElementById('outstandingTable').querySelector('tbody').innerHTML = tableHtml || "<tr><td colspan='2'>No pending payments! 🎉</td></tr>";
+  document.getElementById('outstandingTable').querySelector('tbody').innerHTML = outHtml || "<tr><td colspan='2'>No pending payments! 🎉</td></tr>";
+
+  // ==========================================
+  // 4. BUILD SALES PAGE LEDGER 
+  // ==========================================
+  let salesHtml = '';
+  // Show the last 50 sales in the ledger by default so it doesn't freeze the browser
+  globalData.sales.slice(-50).reverse().forEach(r => {
+    let statusColor = String(r.paymentStatus).toLowerCase() === 'paid' || String(r.paymentStatus).toLowerCase() === 'recieved' ? 'green' : '#ef4444';
+    salesHtml += `
+      <tr>
+        <td>${r.date || '-'}</td>
+        <td><strong>${r.customerName || '-'}</strong></td>
+        <td>${r.productName || '-'}</td>
+        <td>${getNum(r, 'qty')}</td>
+        <td>₹ ${getNum(r, 'amount').toLocaleString('en-IN')}</td>
+        <td style="color: ${statusColor}; font-weight:bold;">${r.paymentStatus || 'Pending'}</td>
+      </tr>
+    `;
+  });
+  document.getElementById('fullSalesTable').querySelector('tbody').innerHTML = salesHtml || "<tr><td colspan='6'>No sales found.</td></tr>";
+
+  // ==========================================
+  // 5. BUILD PURCHASES PAGE 
+  // ==========================================
+  let totalPurchases = 0;
+  let purHtml = '';
+  globalData.purchases.slice(-50).reverse().forEach(r => {
+    let amt = getNum(r, 'amount');
+    totalPurchases += amt;
+    purHtml += `
+      <tr>
+        <td>${r.date || '-'}</td>
+        <td><strong>${r.partyName || r.vendorName || '-'}</strong></td>
+        <td>${r.itemName || '-'}</td>
+        <td>${getNum(r, 'quantity') || getNum(r, 'qty')}</td>
+        <td>₹ ${amt.toLocaleString('en-IN')}</td>
+      </tr>
+    `;
+  });
+  document.getElementById('fullPurchaseTable').querySelector('tbody').innerHTML = purHtml || "<tr><td colspan='5'>No purchases found.</td></tr>";
+  document.getElementById('kpi-total-purchases').querySelector('h2').innerText = `₹ ${totalPurchases.toLocaleString('en-IN')}`;
 }
 
-// --- FORM SUBMISSION (Write to Sheet) ---
+// --- FORM SUBMISSION ---
 async function submitProduction() {
   let dateVal = document.getElementById('formDate').value, shiftVal = document.getElementById('formShift').value;
   let mtVal = document.getElementById('formMT').value, hrsVal = document.getElementById('formHrs').value;
@@ -172,18 +226,9 @@ async function submitProduction() {
     await fetch(apis.production, {
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        production: { 
-          date: dateVal.split('-').reverse().join('/'), 
-          workShift: shiftVal, 
-          productionMt: mtVal, 
-          machineRunHrs: hrsVal 
-        } 
-      })
+      body: JSON.stringify({ production: { date: dateVal.split('-').reverse().join('/'), workShift: shiftVal, productionMt: mtVal, machineRunHrs: hrsVal } })
     });
     document.getElementById('formMessage').innerText = "✅ Saved successfully!";
     setTimeout(() => { closeModal(); fetchAllData(); }, 1500); 
-  } catch(err) { 
-    document.getElementById('formMessage').innerText = "❌ Error saving."; 
-  }
+  } catch(err) { document.getElementById('formMessage').innerText = "❌ Error saving."; }
 }
