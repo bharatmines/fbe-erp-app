@@ -30,55 +30,87 @@
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-logo">⚡ FBE LIVE</div>
       <ul class="menu-links">
-        <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-        <li><a href="#" onclick="openModal()"><i class="fas fa-industry"></i> Add Production</a></li>
-        <li><a href="#"><i class="fas fa-shopping-cart"></i> Sales</a></li>
-        <li><a href="#"><i class="fas fa-truck"></i> Purchases</a></li>
+        <li id="nav-dashboard" class="active"><a href="#" onclick="switchView('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+        <li><a href="#" onclick="openModal()"><i class="fas fa-plus-circle"></i> Add Production</a></li>
+        <li id="nav-sales"><a href="#" onclick="switchView('sales')"><i class="fas fa-shopping-cart"></i> Sales Ledger</a></li>
+        <li id="nav-purchases"><a href="#" onclick="switchView('purchases')"><i class="fas fa-truck"></i> Purchases</a></li>
         <li><a href="#"><i class="fas fa-users"></i> Labour</a></li>
         <li style="margin-top: 30px;"><a href="#" onclick="logout()" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
       </ul>
     </nav>
 
     <main class="main-content">
-      <header class="top-bar">
-        <div>
-          <h1>Operations Dashboard</h1>
-          <p>Live summary of FBE metrics</p>
+      
+      <div id="view-dashboard" class="page-view">
+        <header class="top-bar">
+          <div><h1>Operations Dashboard</h1><p>Live summary of FBE metrics</p></div>
+          <div class="controls">
+            <select id="dateFilter" onchange="toggleCustomDate()">
+              <option value="all">All Time</option>
+              <option value="recent">Last 30 Entries</option>
+              <option value="custom">Custom Range</option>
+            </select>
+            <div id="customDateRange" style="display:none; gap:10px; align-items:center;">
+               <input type="date" id="startDate" onchange="loadDashboard()">
+               <span>TO</span>
+               <input type="date" id="endDate" onchange="loadDashboard()">
+            </div>
+          </div>
+        </header>
+
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpi-sales"><h3>Total Sales</h3><h2>⏳...</h2></div>
+          <div class="kpi-card" id="kpi-production"><h3>Production (MT)</h3><h2>⏳...</h2></div>
+          <div class="kpi-card" id="kpi-energy"><h3>Energy Units/MT</h3><h2>⏳...</h2></div>
         </div>
-        <div class="controls">
-          <select id="dateFilter" onchange="toggleCustomDate()">
-            <option value="all">All Time</option>
-            <option value="recent">Last 30 Entries</option>
-            <option value="custom">Custom Range</option>
-          </select>
-          <div id="customDateRange" style="display:none; gap:10px; align-items:center;">
-             <input type="date" id="startDate" onchange="loadDashboard()">
-             <span>TO</span>
-             <input type="date" id="endDate" onchange="loadDashboard()">
+
+        <div class="charts-grid">
+          <div class="chart-container"><h3>Sales Trend</h3><canvas id="salesChart"></canvas></div>
+          <div class="chart-container"><h3>Biomass Mix</h3><canvas id="biomassChart"></canvas></div>
+        </div>
+
+        <div class="table-container">
+          <h3>Outstanding Payments (Pending)</h3>
+          <table id="outstandingTable">
+            <thead><tr><th>Customer</th><th>Amount Due (₹)</th></tr></thead>
+            <tbody><tr><td>Loading data...</td><td></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-sales" class="page-view" style="display: none;">
+        <header class="top-bar">
+          <div><h1>Sales Ledger</h1><p>Complete history of dispatched goods</p></div>
+        </header>
+        <div class="table-container" style="overflow-x: auto;">
+          <table id="fullSalesTable" style="min-width: 600px;">
+            <thead><tr><th>Date</th><th>Customer</th><th>Product</th><th>Qty (MT)</th><th>Amount (₹)</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="6">Loading data...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-purchases" class="page-view" style="display: none;">
+        <header class="top-bar">
+          <div><h1>Purchases</h1><p>Inbound raw materials tracking</p></div>
+        </header>
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpi-total-purchases" style="border-top-color: #f59e0b;">
+            <h3>Total Purchase Spend</h3><h2>⏳...</h2>
           </div>
         </div>
-      </header>
-
-      <div class="kpi-grid">
-        <div class="kpi-card" id="kpi-sales"><h3>Total Sales</h3><h2>⏳...</h2></div>
-        <div class="kpi-card" id="kpi-production"><h3>Production (MT)</h3><h2>⏳...</h2></div>
-        <div class="kpi-card" id="kpi-energy"><h3>Energy Units/MT</h3><h2>⏳...</h2></div>
+        <div class="table-container" style="overflow-x: auto;">
+          <table id="fullPurchaseTable" style="min-width: 600px;">
+            <thead><tr><th>Date</th><th>Vendor</th><th>Item</th><th>Qty (MT)</th><th>Amount (₹)</th></tr></thead>
+            <tbody><tr><td colspan="5">Loading data...</td></tr></tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="charts-grid">
-        <div class="chart-container"><h3>Sales Trend</h3><canvas id="salesChart"></canvas></div>
-        <div class="chart-container"><h3>Biomass Mix</h3><canvas id="biomassChart"></canvas></div>
-      </div>
-
-      <div class="table-container">
-        <h3>Outstanding Payments (Pending)</h3>
-        <table id="outstandingTable">
-          <thead><tr><th>Customer</th><th>Amount Due (₹)</th></tr></thead>
-          <tbody><tr><td>Loading data...</td><td></td></tr></tbody>
-        </table>
-      </div>
     </main>
-  </div> <div id="prodModal" class="modal">
+  </div> 
+
+  <div id="prodModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeModal()">&times;</span>
       <h2>Log New Production</h2>
@@ -86,7 +118,7 @@
       <label>Shift</label><select id="formShift"><option>Day</option><option>Night</option></select>
       <label>Production (MT)</label><input type="number" id="formMT" placeholder="15.5">
       <label>Machine Hours</label><input type="number" id="formHrs" placeholder="8">
-      <button class="btn-primary" onclick="submitProduction()" style="width:100%; margin-top:15px;">Save to Google Sheet</button>
+      <button class="btn-primary" onclick="submitProduction()" style="width:100%; margin-top:15px;">Save</button>
       <p id="formMessage" style="text-align:center; color:green; margin-top:10px;"></p>
     </div>
   </div>
