@@ -21,6 +21,7 @@
   </div>
 
   <div id="appContent" style="display: none;">
+    
     <div class="mobile-header">
       <div class="logo">⚡ FBE LIVE</div>
       <i class="fas fa-bars menu-btn" onclick="toggleMenu()"></i>
@@ -77,9 +78,7 @@
         </table>
       </div>
     </main>
-  </div>
-
-  <div id="prodModal" class="modal">
+  </div> <div id="prodModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeModal()">&times;</span>
       <h2>Log New Production</h2>
@@ -87,7 +86,7 @@
       <label>Shift</label><select id="formShift"><option>Day</option><option>Night</option></select>
       <label>Production (MT)</label><input type="number" id="formMT" placeholder="15.5">
       <label>Machine Hours</label><input type="number" id="formHrs" placeholder="8">
-      <button class="btn-primary" onclick="submitProduction()">Save to Google Sheet</button>
+      <button class="btn-primary" onclick="submitProduction()" style="width:100%; margin-top:15px;">Save to Google Sheet</button>
       <p id="formMessage" style="text-align:center; color:green; margin-top:10px;"></p>
     </div>
   </div>
